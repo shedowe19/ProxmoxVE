@@ -4,10 +4,10 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { analytics, basePath } from "@/config/siteConfig";
 import "@/styles/globals.css";
+import { OpenPanelComponent } from "@openpanel/nextjs";
 import { Inter } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import React from "react";
-
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
@@ -15,15 +15,7 @@ export const metadata = {
   generator: "Next.js",
   applicationName: "Proxmox VE Helper-Scripts",
   referrer: "origin-when-cross-origin",
-  keywords: [
-    "Proxmox VE",
-    "Helper-Scripts",
-    "tteck",
-    "helper",
-    "scripts",
-    "proxmox",
-    "VE",
-  ],
+  keywords: ["Proxmox VE", "Helper-Scripts", "tteck", "helper", "scripts", "proxmox", "VE"],
   authors: { name: "Bram Suurd" },
   creator: "Bram Suurd",
   publisher: "Bram Suurd",
@@ -59,22 +51,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script
-          defer
-          src={`https://${analytics.url}/script.js`}
-          data-website-id={analytics.token}
-        ></script>
         <link rel="canonical" href={metadata.metadataBase.href} />
         <link rel="manifest" href="manifest.webmanifest" />
         <link rel="preconnect" href="https://api.github.com" />
       </head>
       <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+          <OpenPanelComponent clientId={analytics.token} trackScreenViews={true} apiUrl={analytics.url} />
+          {children}
           <div className="flex w-full flex-col justify-center">
             <Navbar />
             <div className="flex min-h-screen flex-col justify-center">
