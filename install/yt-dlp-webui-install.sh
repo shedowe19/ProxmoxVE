@@ -12,16 +12,16 @@ catch_errors
 setting_up_container
 network_check
 update_os
-install_core_deps
 
 msg_info "Installing Dependencies"
 $STD apt-get install -y \
     sudo \
+    mc \
+    curl \
     ffmpeg
 msg_ok "Installed Dependencies"
 
 msg_info "Installing ${APPLICATION}"
-mkdir -p /opt/yt-dlp-webui
 RELEASE=$(curl -s https://api.github.com/repos/marcopiovanello/yt-dlp-web-ui/releases/latest | grep "tag_name" | awk '{print substr($2, 3, length($2)-4) }')
 wget -q "https://github.com/marcopiovanello/yt-dlp-web-ui/releases/download/v${RELEASE}/yt-dlp-webui_linux-amd64" -O /usr/local/bin/yt-dlp-webui
 chmod +x /usr/local/bin/yt-dlp-webui
@@ -34,6 +34,7 @@ chmod a+rx /usr/local/bin/yt-dlp
 msg_ok "Installed yt-dlp"
 
 msg_info "Setting up ${APPLICATION}"
+mkdir -p /opt/yt-dlp-webui
 mkdir /downloads
 RPC_PASSWORD=$(openssl rand -base64 16)
 {
@@ -90,7 +91,7 @@ ExecStart=/usr/local/bin/yt-dlp-webui --conf /opt/yt-dlp-webui/config.conf
 [Install]
 WantedBy=multi-user.target
 EOF
-systemctl start -q --now yt-dlp-webui
+systemctl enable -q --now yt-dlp-webui
 msg_ok "Set up ${APPLICATION}"
 
 motd_ssh
