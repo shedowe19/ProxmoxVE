@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 
 # Copyright (c) 2021-2025 tteck
-# Author: tteck
-# Co-Author: MickLesk (Canbiz)
+# Author: MickLesk (Canbiz)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
-# Source: https://github.com/ErsatzTV/ErsatzTV
+# Source: https://ersatztv.org/
 
-source /dev/stdin <<< "$FUNCTIONS_FILE_PATH"
+source /dev/stdin <<<"$FUNCTIONS_FILE_PATH"
 color
 verb_ip6
 catch_errors
@@ -42,11 +41,13 @@ if [[ "$CTTYPE" == "0" ]]; then
 fi
 msg_ok "Set Up Hardware Acceleration"
 
-msg_info "Installing ErsatzTV" 
+msg_info "Installing ErsatzTV"
 cd /opt
 RELEASE=$(curl -s https://api.github.com/repos/ErsatzTV/ErsatzTV/releases | grep -oP '"tag_name": "\K[^"]+' | head -n 1)
-wget -qO- "https://github.com/ErsatzTV/ErsatzTV/releases/download/${RELEASE}/ErsatzTV-${RELEASE}-linux-x64.tar.gz" | tar -xz -C /opt
+wget -qO- "https://github.com/ErsatzTV/ErsatzTV/releases/download/${RELEASE}/ErsatzTV-${RELEASE}-linux-x64.tar.gz" -O "$temp_file"
+tar -xzf "$temp_file"
 mv /opt/ErsatzTV-${RELEASE}-linux-x64 /opt/ErsatzTV
+echo "${RELEASE}" >"/opt/${APPLICATION}_version.txt"
 msg_ok "Installed ErsatzTV"
 
 msg_info "Creating Service"
@@ -73,7 +74,7 @@ motd_ssh
 customize
 
 msg_info "Cleaning up"
-rm -rf /opt/ErsatzTV-${RELEASE}-linux-x64.tar.gz
+rm -f ${temp_file}
 $STD apt-get -y autoremove
 $STD apt-get -y autoclean
 msg_ok "Cleaned"
