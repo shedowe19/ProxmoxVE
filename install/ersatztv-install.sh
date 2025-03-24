@@ -67,7 +67,7 @@ RestartSec=30
 [Install]
 WantedBy=multi-user.target
 EOF
-systemctl -q --now enable ersatzTV
+systemctl enable -q --now ersatzTV
 msg_ok "Created Service"
 
 motd_ssh
