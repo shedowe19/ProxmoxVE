@@ -3,8 +3,10 @@
 # Copyright (c) 2021-2025 tteck
 # Author: tteck (tteckster)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
-# Source: https://nginxproxymanager.com/
+# Source: https://github.com/openappsec/open-appsec-npm
 
+# Hier wird davon ausgegangen, dass die Funktionen für color, verb_ip6 usw. bereits im Kontext verfügbar sind.
+# Die Zeile zum Sourcen von FUNCTIONS_FILE_PATH wird entfernt, da die Funktionen direkt im Skript erwartet werden.
 source /dev/stdin <<<"$FUNCTIONS_FILE_PATH"
 color
 verb_ip6
@@ -13,7 +15,9 @@ setting_up_container
 network_check
 update_os
 
-msg_info "Installing Dependencies"
+APP="Open AppSec NPM"
+
+msg_info "Installiere Abhängigkeiten"
 $STD apt-get update
 $STD apt-get -y install \
   gnupg \
@@ -25,9 +29,9 @@ $STD apt-get -y install \
   logrotate \
   build-essential \
   git
-msg_ok "Installed Dependencies"
+msg_ok "Abhängigkeiten installiert"
 
-msg_info "Installing Python Dependencies"
+msg_info "Installiere Python-Abhängigkeiten"
 $STD apt-get install -y \
   python3 \
   python3-dev \
@@ -39,56 +43,44 @@ $STD apt-get install -y \
 $STD pip3 install certbot-dns-multi
 $STD python3 -m venv /opt/certbot/
 rm -rf /usr/lib/python3.*/EXTERNALLY-MANAGED
-msg_ok "Installed Python Dependencies"
+msg_ok "Python-Abhängigkeiten installiert"
 
 VERSION="$(awk -F'=' '/^VERSION_CODENAME=/{ print $NF }' /etc/os-release)"
 
-msg_info "Installing Openresty"
+msg_info "Installiere Openresty"
 wget -qO - https://openresty.org/package/pubkey.gpg | gpg --dearmor -o /etc/apt/trusted.gpg.d/openresty-archive-keyring.gpg
 echo -e "deb http://openresty.org/package/debian bullseye openresty" >/etc/apt/sources.list.d/openresty.list
 $STD apt-get update
 $STD apt-get -y install openresty
-msg_ok "Installed Openresty"
+msg_ok "Openresty installiert"
 
-msg_info "Installing Node.js"
+msg_info "Installiere Node.js"
 $STD bash <(curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh)
 source ~/.bashrc
 $STD nvm install 16.20.2
 ln -sf /root/.nvm/versions/node/v16.20.2/bin/node /usr/bin/node
-msg_ok "Installed Node.js"
+msg_ok "Node.js installiert"
 
-msg_info "Installing pnpm"
+msg_info "Installiere pnpm"
 $STD npm install -g pnpm@8.15
-msg_ok "Installed pnpm"
+msg_ok "pnpm installiert"
 
-RELEASE=$(curl -s https://api.github.com/repos/NginxProxyManager/nginx-proxy-manager/releases/latest |
+RELEASE=$(curl -s https://api.github.com/repos/openappsec/open-appsec-npm/releases/latest |
   grep "tag_name" |
   awk '{print substr($2, 3, length($2)-4) }')
 
-read -r -p "Would you like to install an older version (v2.10.4)? <y/N> " prompt
-if [[ ${prompt,,} =~ ^(y|yes)$ ]]; then
-  msg_info "Downloading Nginx Proxy Manager v2.10.4"
-  wget -q https://codeload.github.com/NginxProxyManager/nginx-proxy-manager/tar.gz/v2.10.4 -O - | tar -xz
-  cd ./nginx-proxy-manager-2.10.4
-  msg_ok "Downloaded Nginx Proxy Manager v2.10.4"
-else
-  msg_info "Downloading Nginx Proxy Manager v${RELEASE}"
-  wget -q https://codeload.github.com/NginxProxyManager/nginx-proxy-manager/tar.gz/v${RELEASE} -O - | tar -xz
-  cd ./nginx-proxy-manager-${RELEASE}
-  msg_ok "Downloaded Nginx Proxy Manager v${RELEASE}"
-fi
-msg_info "Setting up Environment"
+msg_info "Lade Open AppSec NPM v${RELEASE} herunter"
+wget -q https://codeload.github.com/openappsec/open-appsec-npm/tar.gz/v${RELEASE} -O - | tar -xz
+cd ./open-appsec-npm-${RELEASE}
+msg_ok "Open AppSec NPM v${RELEASE} heruntergeladen"
+
+msg_info "Richte Umgebung ein"
 ln -sf /usr/bin/python3 /usr/bin/python
 ln -sf /usr/bin/certbot /opt/certbot/bin/certbot
 ln -sf /usr/local/openresty/nginx/sbin/nginx /usr/sbin/nginx
 ln -sf /usr/local/openresty/nginx/ /etc/nginx
-if [[ ${prompt,,} =~ ^(y|yes)$ ]]; then
-  sed -i "s|\"version\": \"0.0.0\"|\"version\": \"2.10.4\"|" backend/package.json
-  sed -i "s|\"version\": \"0.0.0\"|\"version\": \"2.10.4\"|" frontend/package.json
-else
-  sed -i "s|\"version\": \"0.0.0\"|\"version\": \"$RELEASE\"|" backend/package.json
-  sed -i "s|\"version\": \"0.0.0\"|\"version\": \"$RELEASE\"|" frontend/package.json
-fi
+sed -i "s|\"version\": \"0.0.0\"|\"version\": \"$RELEASE\"|" backend/package.json
+sed -i "s|\"version\": \"0.0.0\"|\"version\": \"$RELEASE\"|" frontend/package.json
 sed -i 's|"fork-me": ".*"|"fork-me": "Proxmox VE Helper-Scripts"|' frontend/js/i18n/messages.json
 sed -i "s|https://github.com.*source=nginx-proxy-manager|https://helper-scripts.com|g" frontend/js/app/ui/footer/main.ejs
 sed -i 's+^daemon+#daemon+g' docker/rootfs/etc/nginx/nginx.conf
@@ -134,18 +126,18 @@ fi
 mkdir -p /app/global /app/frontend/images
 cp -r backend/* /app
 cp -r global/* /app/global
-msg_ok "Set up Environment"
+msg_ok "Umgebung eingerichtet"
 
-msg_info "Building Frontend"
+msg_info "Erstelle Frontend"
 cd ./frontend
 $STD pnpm install
 $STD pnpm upgrade
 $STD pnpm run build
 cp -r dist/* /app/frontend
 cp -r app-images/* /app/frontend/images
-msg_ok "Built Frontend"
+msg_ok "Frontend erstellt"
 
-msg_info "Initializing Backend"
+msg_info "Initialisiere Backend"
 rm -rf /app/config/default.json
 if [ ! -f /app/config/production.json ]; then
   cat <<'EOF' >/app/config/production.json
@@ -164,12 +156,12 @@ EOF
 fi
 cd /app
 $STD pnpm install
-msg_ok "Initialized Backend"
+msg_ok "Backend initialisiert"
 
-msg_info "Creating Service"
+msg_info "Erstelle Dienst"
 cat <<'EOF' >/lib/systemd/system/npm.service
 [Unit]
-Description=Nginx Proxy Manager
+Description=${APP}
 After=network.target
 Wants=openresty.service
 
@@ -184,22 +176,26 @@ Restart=on-failure
 [Install]
 WantedBy=multi-user.target
 EOF
-msg_ok "Created Service"
+msg_ok "Dienst erstellt"
 
 motd_ssh
 customize
 
-msg_info "Starting Services"
+msg_info "Starte Dienste"
 sed -i 's/user npm/user root/g; s/^pid/#pid/g' /usr/local/openresty/nginx/conf/nginx.conf
 sed -r -i 's/^([[:space:]]*)su npm npm/\1#su npm npm/g;' /etc/logrotate.d/nginx-proxy-manager
 sed -i 's/include-system-site-packages = false/include-system-site-packages = true/g' /opt/certbot/pyvenv.cfg
 systemctl enable -q --now openresty
 systemctl enable -q --now npm
-msg_ok "Started Services"
+msg_ok "Dienste gestartet"
 
-msg_info "Cleaning up"
-rm -rf ../nginx-proxy-manager-*
+msg_info "Räume auf"
+rm -rf ../open-appsec-npm-*
 systemctl restart openresty
 $STD apt-get -y autoremove
 $STD apt-get -y autoclean
-msg_ok "Cleaned"
+msg_ok "Aufgeräumt"
+
+msg_ok "Installation von ${APP} abgeschlossen!\n"
+echo -e "${INFO}${YW} Zugriff über die folgende URL:${CL}"
+echo -e "${TAB}${GATEWAY}${BGN}http://${IP}:81${CL}"
