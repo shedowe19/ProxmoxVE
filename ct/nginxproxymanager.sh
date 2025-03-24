@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 source <(curl -s https://raw.githubusercontent.com/shedowe19/ProxmoxVE/main/misc/build.func)
-# Copyright (c) 2021-2025 tteck
-# Author: tteck (tteckster)
-# License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
+# Copyright (c) 2025-2025 shedowe19
+# Author: shedowe19
+# License: MIT | https://github.com/shedowe19/ProxmoxVE/raw/main/LICENSE
 # Source: https://nginxproxymanager.com/
 
 APP="Nginx Proxy Manager"
@@ -14,7 +14,7 @@ var_os="debian"
 var_version="12"
 var_unprivileged="1"
 
-header_info "$APP" 
+header_info "$APP"
 variables
 color
 catch_errors
@@ -24,38 +24,38 @@ function update_script() {
   check_container_storage
   check_container_resources
   if [[ ! -f /lib/systemd/system/npm.service ]]; then
-    msg_error "No ${APP} Installation Found!"
+    msg_error "Keine ${APP}-Installation gefunden!"
     exit
   fi
-  if ! command -v pnpm &> /dev/null; then  
-    msg_info "Installing pnpm"
+  if ! command -v pnpm &> /dev/null; then
+    msg_info "Installiere pnpm"
     #export NODE_OPTIONS=--openssl-legacy-provider
     $STD npm install -g pnpm@8.15
-    msg_ok "Installed pnpm"
+    msg_ok "pnpm installiert"
   fi
-  RELEASE=$(curl -s https://api.github.com/repos/NginxProxyManager/nginx-proxy-manager/releases/latest |
+  RELEASE=$(curl -s https://api.github.com/repos/openappsec/open-appsec-npm/releases/latest |
     grep "tag_name" |
     awk '{print substr($2, 3, length($2)-4) }')
-  msg_info "Stopping Services"
+  msg_info "Stoppe Dienste"
   systemctl stop openresty
   systemctl stop npm
-  msg_ok "Stopped Services"
+  msg_ok "Dienste gestoppt"
 
-  msg_info "Cleaning Old Files"
+  msg_info "Lösche alte Dateien"
   rm -rf /app \
     /var/www/html \
     /etc/nginx \
     /var/log/nginx \
     /var/lib/nginx \
     $STD /var/cache/nginx
-  msg_ok "Cleaned Old Files"
+  msg_ok "Alte Dateien gelöscht"
 
-  msg_info "Downloading NPM v${RELEASE}"
-  wget -q https://codeload.github.com/NginxProxyManager/nginx-proxy-manager/tar.gz/v${RELEASE} -O - | tar -xz
-  cd nginx-proxy-manager-${RELEASE}
-  msg_ok "Downloaded NPM v${RELEASE}"
+  msg_info "Lade Open AppSec NPM v${RELEASE} herunter"
+  wget -q https://codeload.github.com/openappsec/open-appsec-npm/tar.gz/v${RELEASE} -O - | tar -xz
+  cd open-appsec-npm-${RELEASE}
+  msg_ok "Open AppSec NPM v${RELEASE} heruntergeladen"
 
-  msg_info "Setting up Enviroment"
+  msg_info "Richte Umgebung ein"
   ln -sf /usr/bin/python3 /usr/bin/python
   ln -sf /usr/bin/certbot /opt/certbot/bin/certbot
   ln -sf /usr/local/openresty/nginx/sbin/nginx /usr/sbin/nginx
@@ -102,18 +102,18 @@ function update_script() {
   cp -r backend/* /app
   cp -r global/* /app/global
   $STD python3 -m pip install --no-cache-dir certbot-dns-cloudflare
-  msg_ok "Setup Enviroment"
+  msg_ok "Umgebung eingerichtet"
 
-  msg_info "Building Frontend"
+  msg_info "Erstelle Frontend"
   cd ./frontend
   $STD pnpm install
   $STD pnpm upgrade
   $STD pnpm run build
   cp -r dist/* /app/frontend
   cp -r app-images/* /app/frontend/images
-  msg_ok "Built Frontend"
+  msg_ok "Frontend erstellt"
 
-  msg_info "Initializing Backend"
+  msg_info "Initialisiere Backend"
   $STD rm -rf /app/config/default.json
   if [ ! -f /app/config/production.json ]; then
     cat <<'EOF' >/app/config/production.json
@@ -132,21 +132,21 @@ EOF
   fi
   cd /app
   $STD pnpm install
-  msg_ok "Initialized Backend"
+  msg_ok "Backend initialisiert"
 
-  msg_info "Starting Services"
+  msg_info "Starte Dienste"
   sed -i 's/user npm/user root/g; s/^pid/#pid/g' /usr/local/openresty/nginx/conf/nginx.conf
   sed -i 's/su npm npm/su root root/g' /etc/logrotate.d/nginx-proxy-manager
   sed -i 's/include-system-site-packages = false/include-system-site-packages = true/g' /opt/certbot/pyvenv.cfg
   systemctl enable -q --now openresty
   systemctl enable -q --now npm
-  msg_ok "Started Services"
+  msg_ok "Dienste gestartet"
 
-  msg_info "Cleaning up"
-  rm -rf ~/nginx-proxy-manager-*
-  msg_ok "Cleaned"
+  msg_info "Räume auf"
+  rm -rf ~/open-appsec-npm-*
+  msg_ok "Aufgeräumt"
 
-  msg_ok "Updated Successfully"
+  msg_ok "Erfolgreich aktualisiert"
   exit
 }
 
@@ -154,7 +154,7 @@ start
 build_container
 description
 
-msg_ok "Completed Successfully!\n"
-echo -e "${CREATING}${GN}${APP} setup has been successfully initialized!${CL}"
-echo -e "${INFO}${YW} Access it using the following URL:${CL}"
+msg_ok "Erfolgreich abgeschlossen!\n"
+echo -e "${CREATING}${GN}${APP}-Setup wurde erfolgreich initialisiert!${CL}"
+echo -e "${INFO}${YW} Zugriff über die folgende URL:${CL}"
 echo -e "${TAB}${GATEWAY}${BGN}http://${IP}:81${CL}"
